@@ -69,7 +69,7 @@ async function main() {
 
   const db = initFirebaseAdmin();
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
   const topicsSnapshot = await db.collection('topics')
     .where('status', '==', 'unused')
@@ -129,9 +129,18 @@ ${previousFeedback ? `\n【前回の修正要求 (Feedback Notes)】\n${previous
 }
 `;
 
-  console.log('Gemini APIに記事全文の生成を依頼中...');
-  const result = await model.generateContent(prompt);
-  let responseText = result.response.text().trim();
+  console.log(`Gemini APIに記事全文の生成を依頼中 (モデル: ${modelName})...`);
+  let responseText;
+  try {
+    const model = genAI.getGenerativeModel({ model: modelName });
+    const result = await model.generateContent(prompt);
+    responseText = result.response.text().trim();
+  } catch (err) {
+    console.warn(`モデル ${modelName} エラー、gemini-2.0-flash にフォールバックします...`, err.message);
+    const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const result = await fallbackModel.generateContent(prompt);
+    responseText = result.response.text().trim();
+  }
 
   if (responseText.startsWith('```json')) {
     responseText = responseText.replace(/^```json\s*/, '').replace(/\s*```$/, '');

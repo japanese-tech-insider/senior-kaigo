@@ -39,7 +39,18 @@ async function main() {
 
   const db = initFirebaseAdmin();
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  
+  // 利用可能なモデルをフォールバック付きで指定
+  const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  console.log(`使用モデル: ${modelName}`);
+  
+  let model;
+  try {
+    model = genAI.getGenerativeModel({ model: modelName });
+  } catch (e) {
+    console.log(`モデル ${modelName} の初期化失敗、gemini-2.0-flash を試行します...`);
+    model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  }
 
   // 1. 直近30日分のキーワードを取得して重複防止
   const thirtyDaysAgo = new Date();
@@ -88,8 +99,17 @@ ${usedKeywords.length > 0 ? usedKeywords.join(', ') : 'なし'}
 `;
 
   console.log('Gemini APIにトピック候補の生成をリクエスト中...');
-  const result = await model.generateContent(prompt);
-  const responseText = result.response.text().trim();
+  
+  let responseText;
+  try {
+    const result = await model.generateContent(prompt);
+    responseText = result.response.text().trim();
+  } catch (err) {
+    console.warn(`モデル ${modelName} でのエラー、gemini-2.0-flash にて再リトライ...`, err.message);
+    const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const result = await fallbackModel.generateContent(prompt);
+    responseText = result.response.text().trim();
+  }
 
   // JSONパース
   let rawJson = responseText;
