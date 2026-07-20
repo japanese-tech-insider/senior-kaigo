@@ -15,13 +15,10 @@ export const Footer: React.FC = () => {
               実家整理の安心手引き
             </span>
           </div>
-          <p className="text-sm text-stone-400 leading-relaxed mb-4">
-            「親が亡くなった後の実家をどうするか」に悩む方のための特化型中立情報メディアです。
-            中立的な視点から結論ファーストで、分かりやすい解決手順と無料相談窓口をご案内しています。
+          <p className="text-sm text-stone-400 leading-relaxed">
+            「親が亡くなった後の実家をどうするか」に悩む方のための情報解説メディアです。
+            整理・解体・売却・相続の進め方や留意点を分かりやすくまとめています。
           </p>
-          <div className="text-xs text-stone-500">
-            ※当サイトは広告運用・SNS集客を行わず、純粋な検索閲覧のみを目的として設計されています。
-          </div>
         </div>
 
         <div>
@@ -53,10 +50,11 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 mt-8 pt-6 border-t border-stone-800 text-center text-xs text-stone-500">
+      <div className="max-w-5xl mx-auto px-4 mt-8 pt-6 border-t border-stone-800 text-center text-xs text-stone-500 leading-relaxed space-y-1">
         <p>© 2026 実家整理の安心手引き All rights reserved.</p>
-        <p className="mt-1">
-          本サイトの情報は一般的な解説です。個別の法律・税務相談は弁護士・税理士等の専門家にご確認ください。
+        <p>
+          【免責事項】当サイトに掲載している情報は一般概念の解説であり、個々の法的効力・税務判断・解体契約等を保証するものではありません。
+          具体的な相続手続き、遺産分割、特例適用等につきましては、必ず弁護士・税理士・司法書士等の有資格者、または関係省庁・自治体・該当事業者へ直接ご確認ください。
         </p>
       </div>
     </footer>

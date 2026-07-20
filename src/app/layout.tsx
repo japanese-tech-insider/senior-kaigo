@@ -10,7 +10,21 @@ export const metadata: Metadata = {
   },
   description:
     '「親が亡くなった後の実家、何から始める？」に結論ファーストで答える専門メディア。実家じまい、空き家売却、解体費用相場、遺品整理、相続手続きの選び方と無料相談窓口を提示します。',
+  keywords: [
+    '実家整理',
+    '親が亡くなった後',
+    '実家じまい',
+    '空き家売却',
+    '解体費用',
+    '遺品整理',
+    '相続手続き',
+    '特定空き家',
+    '不動産買取',
+  ],
   metadataBase: new URL('https://senior-jikka.web.app'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     title: '親が亡くなった後の実家整理の安心手引き',
     description: '「親が亡くなった後の実家、何から始める？」に結論ファーストで答える専門メディア。',
@@ -19,9 +33,17 @@ export const metadata: Metadata = {
     locale: 'ja_JP',
     type: 'website',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: '親が亡くなった後の実家整理の安心手引き',
+    description: '「親が亡くなった後の実家、何から始める？」に結論ファーストで答える専門メディア。',
+  },
   robots: {
     index: true,
     follow: true,
+  },
+  verification: {
+    google: '-kZ36FLQh3S4OH5PnOXS_PT9P8p8NVsdWokqXqg4rys',
   },
 };
 

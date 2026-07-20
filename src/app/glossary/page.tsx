@@ -10,6 +10,17 @@ export const metadata: Metadata = {
   title: '実家整理の専門用語集｜空き家・解体・遺品整理・相続用語解説',
   description:
     '「特定空き家」「遺品整理士」「3000万円特別控除」など、親が亡くなった後の手続きや片付けでよく出てくる専門用語を分かりやすく解説。',
+  keywords: [
+    '実家整理 用語集',
+    '特定空き家',
+    '遺品整理士',
+    '3000万円特別控除',
+    '建物滅失登記',
+    '相続登記義務化',
+  ],
+  alternates: {
+    canonical: '/glossary',
+  },
 };
 
 export default function GlossaryPage() {

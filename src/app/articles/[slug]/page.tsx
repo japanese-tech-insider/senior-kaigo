@@ -7,7 +7,7 @@ import { getCategoryBySlug } from '@/lib/categories';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { UnifiedCTA } from '@/components/UnifiedCTA';
 import { Accordion } from '@/components/Accordion';
-import { CheckCircle2, Clock, Calendar, ShieldCheck, Sparkles, BookOpen } from 'lucide-react';
+import { CheckCircle2, Clock, Calendar, AlertCircle } from 'lucide-react';
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>;
@@ -30,12 +30,23 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     };
   }
 
-  // statusがpublished以外の場合は noindex を付与
+  const category = getCategoryBySlug(article.category);
   const isPublished = article.status === 'published';
 
   return {
     title: article.metaTitle || article.title,
     description: article.metaDescription,
+    keywords: [
+      article.title,
+      category ? category.name : '実家整理',
+      '費用相場',
+      '手続き手順',
+      '空き家対策',
+      '遺品整理',
+    ],
+    alternates: {
+      canonical: `/articles/${article.slug}`,
+    },
     robots: {
       index: isPublished,
       follow: isPublished,
@@ -45,6 +56,11 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
       description: article.metaDescription,
       type: 'article',
       publishedTime: article.publishedAt,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.metaTitle || article.title,
+      description: article.metaDescription,
     },
   };
 }
@@ -59,7 +75,6 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
   const category = getCategoryBySlug(article.category);
 
-  // 構造化データ (JSON-LD) の生成
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -140,7 +155,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         <section className="bg-emerald-50 border-2 border-emerald-800/40 rounded-2xl p-5 md:p-6 shadow-xs">
           <div className="flex items-center gap-2 text-emerald-950 font-bold text-base md:text-lg mb-3">
             <CheckCircle2 className="w-6 h-6 text-emerald-800 shrink-0" />
-            <span>【この記事の要点・3秒で分かる結論】</span>
+            <span>【この記事の要点・結論サマリー】</span>
           </div>
 
           <ol className="space-y-3">
@@ -161,10 +176,19 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.body}</ReactMarkdown>
       </div>
 
+      {/* 法的・税務アドバイス関する注意・専門家確認コラム枠 */}
+      <div className="bg-amber-50 border-l-4 border-amber-600 rounded-r-2xl p-4 md:p-5 text-amber-950 text-sm md:text-base leading-relaxed my-6 flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+        <div>
+          <div className="font-bold mb-1">💡 ご確認・注意事項</div>
+          本記事の解説は一般的な手順の目安です。税金の控除条件、相続名義変更、実際の解体・処分見積もり金額は個々の物件状態や自治体・税制によって異なります。具体的なご判断にあたっては、弁護士・税理士・司法書士等の有資格者、または専門事業者へ直接ご相談されることを推奨いたします。
+        </div>
+      </div>
+
       {/* 中間 統一CTAボタン */}
       <UnifiedCTA
-        title="あなたの状況ならどうすべき？無料で比較相談してみる"
-        description="記事をすべて読み込まなくても大丈夫です。ご自身の空き家の状態や部屋の間取りを伝えるだけで、概算費用と手順がすぐ分かります。"
+        title="あなたの状況ならどうすべき？無料で比較・査定してみる"
+        description="記事をすべて読み込まなくても大丈夫です。ご自身の空き家の状態や部屋の間取りを伝えるだけで、概算費用と手順の目安が確認できます。"
       />
 
       {/* FAQセクション (構造化データ連動) */}
@@ -174,7 +198,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
       {/* 末尾 統一CTAボタン */}
       <UnifiedCTA
-        title="一括見積もり・無料相談で安心の次の一歩を"
+        title="無料査定・見積もり相談で安心の次の一歩を"
         description="ご家族での話し合いの前に、客観的な見積もり金額・査定額を用意しておくことがスムーズな決断のコツです。"
       />
     </article>

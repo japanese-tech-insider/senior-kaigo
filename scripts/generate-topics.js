@@ -8,11 +8,12 @@
  */
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const admin = require('firebase-admin');
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 // Firebase Admin 初期化
 function initFirebaseAdmin() {
-  if (admin.apps.length === 0) {
+  if (getApps().length === 0) {
     const serviceAccountVar = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     if (!serviceAccountVar) {
       throw new Error('環境変数 FIREBASE_SERVICE_ACCOUNT_KEY がセットされていません。');
@@ -21,11 +22,11 @@ function initFirebaseAdmin() {
       ? JSON.parse(serviceAccountVar)
       : serviceAccountVar;
 
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+    initializeApp({
+      credential: cert(serviceAccount),
     });
   }
-  return admin.firestore();
+  return getFirestore();
 }
 
 async function main() {
@@ -110,7 +111,7 @@ ${usedKeywords.length > 0 ? usedKeywords.join(', ') : 'なし'}
       angle: topic.angle,
       category: topic.category || 'jikka-jimai',
       status: 'unused',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
   }
 

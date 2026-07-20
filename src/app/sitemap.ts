@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
 import { getArticles } from '@/lib/articles';
 import { CATEGORIES } from '@/lib/categories';
-import { GLOSSARY_ITEMS } from '@/lib/glossary';
+
+export const dynamic = 'force-static';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://senior-jikka.web.app';
@@ -31,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // 3. published の記事のみ取得
-  const articles = await getArticles(); // status === "published" のみ返す
+  const articles = await getArticles();
   const articlePages: MetadataRoute.Sitemap = articles.map((article) => ({
     url: `${baseUrl}/articles/${article.slug}`,
     lastModified: article.publishedAt ? new Date(article.publishedAt) : new Date(article.createdAt),

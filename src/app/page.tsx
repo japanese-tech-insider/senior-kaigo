@@ -35,28 +35,28 @@ export default async function HomePage() {
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-1.5 bg-emerald-800/90 text-emerald-100 text-xs md:text-sm font-semibold px-3 py-1 rounded-full mb-4">
             <HeartHandshake className="w-4 h-4 text-emerald-300" />
-            <span>45〜65歳のための親の実家相談窓口</span>
+            <span>45〜65歳のための親の実家相談ガイド</span>
           </div>
 
           <h1 className="text-2xl md:text-4xl font-extrabold leading-snug tracking-tight mb-4">
             親が亡くなった後の実家整理、
             <br />
-            「何から始める？」に明確な答えを。
+            「何から始める？」に明確なヒントを。
           </h1>
 
           <p className="text-emerald-100 text-base md:text-lg leading-relaxed mb-6">
             長い文章を読む余裕がなくても大丈夫です。
-            当サイトは専門用語を使わず、すべての疑問に<strong className="text-white font-bold underline decoration-emerald-400">結論からお伝え</strong>します。
+            当サイトは専門用語をなるべく使わず、複雑な疑問の<strong className="text-white font-bold underline decoration-emerald-400">ポイントを整理してお伝え</strong>します。
           </p>
 
           <div className="flex flex-wrap gap-3 text-xs md:text-sm text-emerald-200">
             <span className="bg-emerald-950/60 px-3 py-1.5 rounded-lg flex items-center gap-1">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              業者比較・見積もり完全無料
+              ご相談・お見積もり無料
             </span>
             <span className="bg-emerald-950/60 px-3 py-1.5 rounded-lg flex items-center gap-1">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              しつこい営業電話一切なし
+              プライバシー厳守
             </span>
           </div>
         </div>
@@ -110,7 +110,7 @@ export default async function HomePage() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl md:text-2xl font-bold text-gray-900 border-l-4 border-emerald-800 pl-3">
-            結論ファーストの実家整理お役立ち記事
+            ポイント整理済みの実家整理お役立ち記事
           </h2>
         </div>
 
@@ -128,7 +128,7 @@ export default async function HomePage() {
           <h3>実家整理の専門用語集 (知識ハブ)</h3>
         </div>
         <p className="text-sm md:text-base text-gray-700 leading-relaxed mb-4">
-          「特定空き家って何？」「遺品整理士って資格が必要？」など、分かりにくい法律や業者の用語をシンプルに解説しています。
+          「特定空き家って何？」「遺品整理士ってどんな資格？」など、分かりにくい用語の概要を分かりやすく解説しています。
         </p>
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -155,7 +155,7 @@ export default async function HomePage() {
       {/* ページ末尾 統一CTA */}
       <UnifiedCTA
         title="実家整理・空き家処分に不安を感じたら"
-        description="一度に複数社の無料見積もり・買取額のシミュレーションを取り寄せられます。ご家族全員の合意形成にも役立ちます。"
+        description="一度に複数社の無料見積もり・買取額のシミュレーションを取り寄せられます。ご家族での話し合いにも役立ちます。"
       />
     </div>
   );

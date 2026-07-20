@@ -27,6 +27,16 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   return {
     title: `${category.name}の進め方・費用と手順`,
     description: category.description,
+    keywords: [
+      category.name,
+      '実家整理',
+      '親が亡くなった後',
+      '費用相場',
+      '手続き手順',
+    ],
+    alternates: {
+      canonical: `/category/${category.slug}`,
+    },
   };
 }
 
