@@ -25,14 +25,14 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   }
 
   return {
-    title: `${category.name}の進め方・費用と手順`,
+    title: `${category.name}の解説と選定基準`,
     description: category.description,
     keywords: [
       category.name,
-      '実家整理',
-      '親が亡くなった後',
-      '費用相場',
-      '手続き手順',
+      '介護施設選び',
+      '親の介護',
+      '老人ホーム費用',
+      '選び方のコツ',
     ],
     alternates: {
       canonical: `/category/${category.slug}`,
@@ -55,16 +55,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <Breadcrumbs items={[{ label: category.name }]} />
 
       {/* Header */}
-      <div className="bg-emerald-900 text-white rounded-3xl p-6 md:p-8">
+      <div className="bg-gradient-to-r from-[#E07A5F] via-[#D96B27] to-[#C85A32] text-white rounded-3xl p-6 md:p-8 shadow-md">
         <h1 className="text-2xl md:text-3xl font-bold mb-3">{category.name}</h1>
-        <p className="text-emerald-100 text-base md:text-lg leading-relaxed">
+        <p className="text-orange-50 text-base md:text-lg leading-relaxed">
           {category.description}
         </p>
       </div>
 
       {/* Articles */}
       <section className="space-y-4">
-        <h2 className="text-xl font-bold text-gray-900 border-l-4 border-emerald-800 pl-3">
+        <h2 className="text-xl font-bold text-gray-900 border-l-4 border-[#E07A5F] pl-3">
           {category.name}の結論ファースト記事一覧 ({articles.length}件)
         </h2>
 
@@ -75,15 +75,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             ))}
           </div>
         ) : (
-          <div className="bg-stone-100 p-8 rounded-2xl text-center text-gray-600">
-            現在、このカテゴリの記事は準備・更新中です。
+          <div className="bg-[#FFFDF9] border border-orange-100 p-8 rounded-2xl text-center text-gray-600">
+            現在、このカテゴリの解説記事は順次更新・追加中です。
           </div>
         )}
       </section>
 
       <UnifiedCTA
-        title={`${category.name}について無料で専門家に相談してみる`}
-        description="一社ごとの面倒な交渉は不要。実績のあるパートナー業者からまとめて比較・見積もりが取得できます。"
+        title={`${category.name}について条件に合う施設を無料で探してもらう`}
+        description="一覧で迷う前に、専門スタッフに直接条件を伝えるのが近道です。無料でピッタリの施設をご案内いたします。"
       />
     </div>
   );

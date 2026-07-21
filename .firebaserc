@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "senior-home-cd2be"
-  }
+  },
+  "targets": {
+    "senior-home-cd2be": {
+      "hosting": {
+        "senior-kaigo": [
+          "senior-kaigo"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

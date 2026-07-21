@@ -4,10 +4,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getArticleBySlug, getArticles } from '@/lib/articles';
 import { getCategoryBySlug } from '@/lib/categories';
+import { siteConfig } from '@/lib/site-config';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { UnifiedCTA } from '@/components/UnifiedCTA';
 import { Accordion } from '@/components/Accordion';
-import { CheckCircle2, Clock, Calendar, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Calendar, AlertCircle, HeartHandshake, UserCheck } from 'lucide-react';
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>;
@@ -38,11 +39,11 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     description: article.metaDescription,
     keywords: [
       article.title,
-      category ? category.name : '実家整理',
-      '費用相場',
-      '手続き手順',
-      '空き家対策',
-      '遺品整理',
+      category ? category.name : '介護施設選び',
+      '特養',
+      '有料老人ホーム',
+      '老人ホーム費用',
+      '認知症施設',
     ],
     alternates: {
       canonical: `/articles/${article.slug}`,
@@ -84,7 +85,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     dateModified: article.publishedAt || article.createdAt,
     publisher: {
       '@type': 'Organization',
-      name: '実家整理の安心手引き',
+      name: siteConfig.siteName,
     },
   };
 
@@ -124,16 +125,16 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       />
 
       {/* 記事ヘッダー */}
-      <header className="space-y-4 border-b border-stone-200 pb-6">
+      <header className="space-y-4 border-b border-orange-100 pb-6">
         <div className="flex flex-wrap items-center gap-3">
           {category && (
-            <span className="bg-emerald-900 text-white font-bold text-xs md:text-sm px-3 py-1 rounded-md">
+            <span className="bg-[#E07A5F] text-white font-bold text-xs md:text-sm px-3 py-1 rounded-lg">
               {category.name}
             </span>
           )}
           {article.readingTimeMinutes && (
             <span className="text-xs md:text-sm text-gray-500 flex items-center gap-1">
-              <Clock className="w-4 h-4 text-gray-400" />
+              <Clock className="w-4 h-4 text-orange-400" />
               <span>目安 {article.readingTimeMinutes} 分で読めます</span>
             </span>
           )}
@@ -150,18 +151,23 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         </h1>
       </header>
 
-      {/* 【最優先要件】冒頭3行 結論サマリーボックス */}
+      {/* 【最優先要件】結論ファースト 3行サマリーボックス */}
       {article.summaryList && article.summaryList.length > 0 && (
-        <section className="bg-emerald-50 border-2 border-emerald-800/40 rounded-2xl p-5 md:p-6 shadow-xs">
-          <div className="flex items-center gap-2 text-emerald-950 font-bold text-base md:text-lg mb-3">
-            <CheckCircle2 className="w-6 h-6 text-emerald-800 shrink-0" />
-            <span>【この記事の要点・結論サマリー】</span>
+        <section className="bg-[#FDF8F5] border-2 border-[#E07A5F]/60 rounded-2xl p-5 md:p-6 shadow-xs space-y-3">
+          <div className="flex items-center gap-2 text-[#7c2d12] font-bold text-base md:text-lg border-b border-orange-200 pb-2.5">
+            <CheckCircle2 className="w-6 h-6 text-[#E07A5F] shrink-0" />
+            <span>【この記事はこんな人向け & 結論サマリー】</span>
           </div>
 
-          <ol className="space-y-3">
+          <div className="inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-[#C85A32] bg-orange-100/60 px-3 py-1 rounded-lg">
+            <UserCheck className="w-4 h-4" />
+            <span>親の介護施設選びに迷い、今すぐ何をすべきか知りたい方向け</span>
+          </div>
+
+          <ol className="space-y-3 pt-1">
             {article.summaryList.map((summaryItem, idx) => (
               <li key={idx} className="flex items-start gap-2.5 text-base md:text-lg text-gray-900 leading-relaxed font-medium">
-                <span className="bg-emerald-800 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-1">
+                <span className="bg-[#E07A5F] text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-1">
                   {idx + 1}
                 </span>
                 <span>{summaryItem}</span>
@@ -171,35 +177,35 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         </section>
       )}
 
-      {/* 本文前半 */}
+      {/* 本文 */}
       <div className="markdown-body text-gray-800 text-base md:text-lg leading-relaxed">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.body}</ReactMarkdown>
       </div>
 
-      {/* 法的・税務アドバイス関する注意・専門家確認コラム枠 */}
-      <div className="bg-amber-50 border-l-4 border-amber-600 rounded-r-2xl p-4 md:p-5 text-amber-950 text-sm md:text-base leading-relaxed my-6 flex items-start gap-3">
+      {/* 介護相談・専門家確認コラム枠 */}
+      <div className="bg-amber-50/80 border-l-4 border-amber-600 rounded-r-2xl p-4 md:p-5 text-amber-950 text-sm md:text-base leading-relaxed my-6 flex items-start gap-3">
         <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
         <div>
-          <div className="font-bold mb-1">💡 ご確認・注意事項</div>
-          本記事の解説は一般的な手順の目安です。税金の控除条件、相続名義変更、実際の解体・処分見積もり金額は個々の物件状態や自治体・税制によって異なります。具体的なご判断にあたっては、弁護士・税理士・司法書士等の有資格者、または専門事業者へ直接ご相談されることを推奨いたします。
+          <div className="font-bold mb-1">💡 ご注意・専門家相談について</div>
+          本記事の解説は一般的な施設選びの判断基準です。実際の入居要件や受入可否、月額費用の詳細、医療的ケアの実施状況は、各施設および主治医・ケアマネジャー・地域包括支援センターの判断によって異なります。詳しい相談や個別条件の確認は、各施設や専門窓口に直接お問い合わせください。
         </div>
       </div>
 
       {/* 中間 統一CTAボタン */}
       <UnifiedCTA
-        title="あなたの状況ならどうすべき？無料で比較・査定してみる"
-        description="記事をすべて読み込まなくても大丈夫です。ご自身の空き家の状態や部屋の間取りを伝えるだけで、概算費用と手順の目安が確認できます。"
+        title="条件に合う施設を専門スタッフに無料で探してもらう"
+        description="自力で何十社も比較する必要はありません。お身体の状況・希望の地域・ご予算をお伝えいただくだけで、プロが最適な施設をご紹介します。"
       />
 
       {/* FAQセクション (構造化データ連動) */}
       {article.faqList && article.faqList.length > 0 && (
-        <Accordion items={article.faqList} title="この記事に関連するよくある質問" />
+        <Accordion items={article.faqList} title="介護施設選びに関するよくある質問" />
       )}
 
       {/* 末尾 統一CTAボタン */}
       <UnifiedCTA
-        title="無料査定・見積もり相談で安心の次の一歩を"
-        description="ご家族での話し合いの前に、客観的な見積もり金額・査定額を用意しておくことがスムーズな決断のコツです。"
+        title="無料で最適な介護施設を探してもらう"
+        description="ご家族の負担を減らし、親御さんにとっても最も安心できる住まいをみつけるために。まずは気軽にご希望をお聞かせください。"
       />
     </article>
   );

@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight, HeartHandshake, ShieldCheck } from 'lucide-react';
+import { siteConfig } from '@/lib/site-config';
 
 interface UnifiedCTAProps {
   title?: string;
@@ -12,27 +13,30 @@ interface UnifiedCTAProps {
 }
 
 export const UnifiedCTA: React.FC<UnifiedCTAProps> = ({
-  title = 'あなたの状況に合わせた「安心できる次の一歩」を',
-  description = '実家の片付け・空き家売却・買取・遺品整理など、今のお悩みや概算費用を無料でご相談・査定いただけます。まずはお気軽にご確認ください。',
-  buttonText = '無料で相談・査定してみる',
-  affiliateUrl,
+  title = 'あなたの親御さんにピッタリの施設、まずはプロに相談してみませんか？',
+  description = '「どんな施設が合っているか分からない」「費用や受け入れ条件を一覧ではなく個別で知りたい」という方に。条件を入力するだけで、専門スタッフが最適な施設を無料でお探しします。',
+  buttonText = siteConfig.unifiedCTA.buttonText,
+  affiliateUrl = siteConfig.unifiedCTA.href,
   className = '',
 }) => {
   const handleClick = () => {
     if (affiliateUrl) {
       window.open(affiliateUrl, '_blank', 'noopener,noreferrer');
     } else {
-      alert('【無料相談窓口へ移動します】\n※専門の無料査定・一括見積もりWebサービスページへ移動します。');
+      alert('【無料施設探し窓口へ移動します】\n大手介護施設比較ポータル（LIFULL介護・みんなの介護等）の相談フォームへ移動します。');
     }
   };
 
   return (
     <div
-      className={`my-8 bg-emerald-50 border-2 border-emerald-800/20 rounded-2xl p-6 md:p-8 text-center shadow-sm ${className}`}
+      className={`my-8 bg-[#FFFDF9] border-2 border-[#E07A5F]/30 rounded-2xl p-6 md:p-8 text-center shadow-md relative overflow-hidden ${className}`}
     >
-      <div className="inline-flex items-center gap-1.5 bg-emerald-800 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-full mb-3">
+      {/* Decorative accent top bar */}
+      <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#E07A5F] via-[#F4F1DE] to-[#81B29A]" />
+
+      <div className="inline-flex items-center gap-1.5 bg-[#C85A32] text-white text-xs md:text-sm font-semibold px-3.5 py-1 rounded-full mb-3 shadow-xs">
         <ShieldCheck className="w-4 h-4" />
-        <span>ご相談・お見積もり無料・プライバシー厳守</span>
+        <span>{siteConfig.unifiedCTA.badgeText}</span>
       </div>
 
       <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 leading-snug">
@@ -45,15 +49,16 @@ export const UnifiedCTA: React.FC<UnifiedCTAProps> = ({
 
       <button
         onClick={handleClick}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-800 hover:bg-emerald-900 active:bg-emerald-950 text-white text-lg md:text-xl font-bold px-8 py-4 rounded-xl shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer"
+        className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#E07A5F] hover:bg-[#D96B27] active:bg-[#C85A32] text-white text-lg md:text-xl font-bold px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 cursor-pointer"
       >
+        <HeartHandshake className="w-6 h-6" />
         <span>{buttonText}</span>
         <ArrowRight className="w-6 h-6" />
       </button>
 
-      <p className="text-xs md:text-sm text-gray-500 mt-3 leading-normal">
-        ※提携先の無料査定・見積もり相談窓口へ移動します。ご相談・お見積もりは無料です。<br />
-        ※個別の税制・法的効力・契約内容については、弁護士・税理士・行政書士等の専門家や各事業者にご確認ください。
+      <p className="text-xs md:text-sm text-gray-500 mt-3.5 leading-normal">
+        {siteConfig.unifiedCTA.subText}<br />
+        ※無理な勧誘やしつこい営業電話は一切ございません。安心してご利用いただけます。
       </p>
     </div>
   );
