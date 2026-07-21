@@ -1,9 +1,6 @@
 /**
  * Job 2: generate-article
  * 毎日朝7時(JST)に実行
- * 
- * consultant プロジェクトを参考に構造化JSON指定 (responseMimeType: application/json)
- * および堅牢なモックフォールバック機構を実装
  */
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -61,7 +58,6 @@ function createRawEmail({ to, from, subject, body }) {
     .replace(/=+$/, '');
 }
 
-// consultant方式：万が一APIエラー時に使用するフォールバック記事データ
 function generateArticleMock(topicData) {
   return {
     slug: `jikka-seiri-guide-${Date.now()}`,
@@ -105,22 +101,29 @@ function generateArticleMock(topicData) {
 }
 
 async function generateArticleWithGemini(genAI, prompt, topicData) {
-  try {
-    console.log('Gemini APIに記事全文の生成を依頼中 (responseMimeType: application/json)...');
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      generationConfig: {
-        responseMimeType: 'application/json',
-      },
-    });
+  const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+  const candidateModels = [primaryModel, 'gemini-1.5-flash', 'gemini-2.0-flash-lite'].filter(Boolean);
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text().trim();
-    return JSON.parse(responseText);
-  } catch (err) {
-    console.warn(`[Consultant風フォールバック] Gemini APIエラー (${err.message})。モック記事データを出力します。`);
-    return generateArticleMock(topicData);
+  for (const modelName of candidateModels) {
+    try {
+      console.log(`Gemini APIに記事全文の生成を依頼中 (モデル: ${modelName}, responseMimeType: application/json)...`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      });
+
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text().trim();
+      return JSON.parse(responseText);
+    } catch (err) {
+      console.warn(`モデル [${modelName}] 試行エラー (${err.message})。次の候補へ切り替えます。`);
+    }
   }
+
+  console.warn('[Consultant風フォールバック] 全モデルエラーのためモック記事を出力します。');
+  return generateArticleMock(topicData);
 }
 
 async function main() {

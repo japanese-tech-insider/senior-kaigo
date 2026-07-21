@@ -1,9 +1,6 @@
 /**
  * Job 1: generate-topics
  * 毎日朝6時(JST)に実行
- * 
- * consultant プロジェクトを参考に構造化JSON指定 (responseMimeType: application/json)
- * および堅牢なモックフォールバック機構を実装
  */
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -27,7 +24,6 @@ function initFirebaseAdmin() {
   return getFirestore();
 }
 
-// consultant方式：万が一APIエラー(429等)が発生した場合のモック用トピックライブラリ
 const MOCK_TOPICS = [
   { keyword: '実家整理 費用 相場', angle: '45歳以上で兄弟間トラブルなく実家整理費用を分担・抑える手順', category: 'jikka-jimai' },
   { keyword: '空き家 放置 固定資産税 6倍', angle: '特定空き家指定による減額解除リスクと事前の現状査定対策', category: 'akiya' },
@@ -37,22 +33,29 @@ const MOCK_TOPICS = [
 ];
 
 async function generateTopicsWithGemini(genAI, prompt) {
-  try {
-    console.log('Gemini APIにトピック候補の生成をリクエスト中...');
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      generationConfig: {
-        responseMimeType: 'application/json',
-      },
-    });
+  const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+  const candidateModels = [primaryModel, 'gemini-1.5-flash', 'gemini-2.0-flash-lite'].filter(Boolean);
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text().trim();
-    return JSON.parse(responseText);
-  } catch (err) {
-    console.warn(`[Consultant風フォールバック] Gemini APIエラー (${err.message})。モックトピックを使用します。`);
-    return MOCK_TOPICS;
+  for (const modelName of candidateModels) {
+    try {
+      console.log(`Gemini APIにトピック候補の生成をリクエスト中 (モデル: ${modelName})...`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      });
+
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text().trim();
+      return JSON.parse(responseText);
+    } catch (err) {
+      console.warn(`モデル [${modelName}] 試行エラー (${err.message})。次の候補へ切り替えます。`);
+    }
   }
+
+  console.warn('[Consultant風フォールバック] 全モデルエラーのためモックトピックを出力します。');
+  return MOCK_TOPICS;
 }
 
 async function main() {
@@ -66,7 +69,6 @@ async function main() {
   const db = initFirebaseAdmin();
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // 1. 直近30日分のキーワードを取得して重複防止
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -82,7 +84,6 @@ async function main() {
 
   console.log(`直近30日間の登録済みキーワード (${usedKeywords.length}件):`, usedKeywords);
 
-  // 2. Gemini API用プロンプト構築
   const prompt = `
 あなたは「親が亡くなった後の実家整理」に特化したSEO専門メディアのコンテンツプロデューサーです。
 
@@ -114,7 +115,6 @@ ${usedKeywords.length > 0 ? usedKeywords.join(', ') : 'なし'}
   const generatedTopics = await generateTopicsWithGemini(genAI, prompt);
   console.log(`生成されたトピック数: ${generatedTopics.length}件`);
 
-  // 3. Firestore に保存
   const batch = db.batch();
   for (const topic of generatedTopics) {
     const docRef = db.collection('topics').doc();
