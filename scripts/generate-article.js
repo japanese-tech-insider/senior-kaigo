@@ -1,6 +1,8 @@
 /**
  * Job 2: generate-article
  * 毎日朝7時(JST)に実行
+ * 
+ * レビューメールを綺麗に装飾された HTML メール (Content-Type: text/html) で送信
  */
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -39,16 +41,16 @@ function getGmailClient() {
   return google.gmail({ version: 'v1', auth: oauth2Client });
 }
 
-function createRawEmail({ to, from, subject, body }) {
+function createRawHtmlEmail({ to, from, subject, htmlBody }) {
   const emailLines = [
     `To: ${to}`,
     `From: ${from}`,
     `Subject: =?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`,
     'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: 7bit',
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
     '',
-    body,
+    htmlBody,
   ];
   const email = emailLines.join('\r\n');
   return Buffer.from(email)
@@ -56,6 +58,29 @@ function createRawEmail({ to, from, subject, body }) {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
+}
+
+function convertMarkdownToHtml(markdownText) {
+  if (!markdownText) return '';
+  let html = markdownText
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // 見出し h2, h3
+  html = html.replace(/^### (.*$)/gim, '<h3 style="font-size: 16px; font-weight: bold; color: #064e3b; margin-top: 16px; margin-bottom: 8px;">$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 style="font-size: 18px; font-weight: bold; color: #064e3b; border-bottom: 2px solid #064e3b; padding-bottom: 4px; margin-top: 24px; margin-bottom: 12px;">$1</h2>');
+
+  // 太字
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #064e3b; font-weight: bold; background-color: #ecfdf5; padding: 2px 4px; rounded: 3px;">$1</strong>');
+
+  // 引用
+  html = html.replace(/^&gt; (.*$)/gim, '<blockquote style="border-left: 4px solid #059669; background-color: #f0fdf4; padding: 10px 14px; margin: 12px 0; color: #065f46; font-weight: 500;">$1</blockquote>');
+
+  // 改行
+  html = html.replace(/\n/g, '<br />');
+
+  return html;
 }
 
 function generateArticleMock(topicData) {
@@ -223,31 +248,74 @@ ${previousFeedback ? `\n【前回の修正要求 (Feedback Notes)】\n${previous
   const gmail = getGmailClient();
 
   const emailSubject = `【実家整理メディア 記事レビュー依頼】${generatedArticle.title}`;
-  const emailBody = `実家整理特化メディアの自動生成記事のレビュー依頼です。
 
-■ 記事ID: ${articleRef.id}
-■ タイトル: ${generatedArticle.title}
-■ カテゴリ: ${topicData.category || 'jikka-jimai'}
-■ メタDescription: ${generatedArticle.metaDescription}
+  const summaryItemsHtml = (generatedArticle.summaryList || [])
+    .map((s, i) => `<li style="margin-bottom: 6px;"><strong>${i + 1}.</strong> ${s}</li>`)
+    .join('');
 
-【冒頭結論サマリー】
-${(generatedArticle.summaryList || []).map((s, i) => `${i + 1}. ${s}`).join('\n')}
+  const formattedArticleBodyHtml = convertMarkdownToHtml(generatedArticle.body);
 
-==================================================
-【承認・却下の返信方法】
-- 公開する場合: このメールに「OK」とだけ返信してください。
-- 修正・再生成する場合: 「NG」と記載し、続けて修正理由・改善指示を返信してください。
-==================================================
+  const htmlBody = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f2937; line-height: 1.6; background-color: #f9fafb; padding: 20px; }
+    .container { max-width: 680px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; padding: 24px; }
+    .header-badge { background-color: #064e3b; color: #ffffff; font-weight: bold; font-size: 12px; padding: 4px 10px; border-radius: 4px; display: inline-block; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: bold; color: #111827; margin-bottom: 16px; }
+    .meta-box { background-color: #f3f4f6; border-radius: 10px; padding: 14px; font-size: 13px; color: #4b5563; margin-bottom: 20px; }
+    .action-box { background-color: #ecfdf5; border: 2px solid #059669; border-radius: 12px; padding: 18px; margin-bottom: 24px; }
+    .action-title { font-weight: bold; font-size: 16px; color: #064e3b; margin-bottom: 8px; }
+    .summary-box { background-color: #f0fdf4; border-left: 4px solid #047857; border-radius: 4px; padding: 14px; margin-bottom: 24px; }
+    .article-body { font-size: 15px; color: #374151; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="header-badge">自動生成 記事レビュー依頼</span>
+    <h1 class="title">${generatedArticle.title}</h1>
+    
+    <div class="meta-box">
+      <div><strong>記事ID:</strong> ${articleRef.id}</div>
+      <div><strong>カテゴリ:</strong> ${topicData.category || 'jikka-jimai'}</div>
+      <div><strong>メタDescription:</strong> ${generatedArticle.metaDescription}</div>
+    </div>
 
-【生成本文 (Markdown)】
-${generatedArticle.body}
+    <div class="action-box">
+      <div class="action-title">✉️ メール返信での承認方法</div>
+      <p style="margin: 0 0 8px 0; font-size: 14px;">このメールに直接返信してください：</p>
+      <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+        <li><strong style="color: #047857;">【公開する場合】</strong>: 「<strong>OK</strong>」とだけ返信</li>
+        <li><strong style="color: #dc2626;">【再生成する場合】</strong>: 「<strong>NG</strong>」＋ 修正理由を添えて返信</li>
+      </ul>
+    </div>
+
+    <div class="summary-box">
+      <div style="font-weight: bold; color: #064e3b; margin-bottom: 8px;">💡 【冒頭3行 結論サマリー】</div>
+      <ol style="margin: 0; padding-left: 20px; font-size: 14px; color: #065f46;">
+        ${summaryItemsHtml}
+      </ol>
+    </div>
+
+    <div style="font-weight: bold; font-size: 18px; color: #111827; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 16px;">
+      📄 生成記事プレビュー (Markdown装飾済み)
+    </div>
+
+    <div class="article-body">
+      ${formattedArticleBodyHtml}
+    </div>
+  </div>
+</body>
+</html>
 `;
 
-  const raw = createRawEmail({
+  const raw = createRawHtmlEmail({
     to: userEmail,
     from: userEmail,
     subject: emailSubject,
-    body: emailBody,
+    htmlBody,
   });
 
   const sentMail = await gmail.users.messages.send({
