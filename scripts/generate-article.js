@@ -1,6 +1,9 @@
 /**
  * Job 2: generate-article
  * 毎日朝7時(JST)に実行
+ * 
+ * consultant プロジェクトを参考に構造化JSON指定 (responseMimeType: application/json)
+ * および堅牢なモックフォールバック機構を実装
  */
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -58,6 +61,68 @@ function createRawEmail({ to, from, subject, body }) {
     .replace(/=+$/, '');
 }
 
+// consultant方式：万が一APIエラー時に使用するフォールバック記事データ
+function generateArticleMock(topicData) {
+  return {
+    slug: `jikka-seiri-guide-${Date.now()}`,
+    title: `${topicData.keyword}「何から始める？」後回しにしない順番とポイント解説`,
+    metaTitle: `${topicData.keyword}の手引き｜失敗しない進め方と手順`,
+    metaDescription: `${topicData.keyword}についてポイントを整理して解説。手順と無料査定相談のタイミングを提示します。`,
+    summaryList: [
+      'まずは「貴重品・重要書類の確保」と「契約の確認」を優先するのが安心です。',
+      '不用品処分や実家売却は家族で方針を話し合ってから進めましょう。',
+      '自力で抱え込まず専門の無料査定・見積もり相談を活用するのが第一歩です。',
+    ],
+    faqList: [
+      {
+        question: '片付けを始めるタイミングはいつが良いですか？',
+        answer: '重要書類の探索はすぐに始めて構いません。大型家具の処分等は法要後に親族で相談して進めるのが安心です。',
+      },
+      {
+        question: '費用を抑えるポイントはありますか？',
+        answer: '出張買取で価値のある品を事前に買い取ってもらい、複数の専門事業者から査定を取り寄せるのがおすすめです。',
+      },
+    ],
+    body: `
+## 1. 最優先で手をつけるべきポイント
+
+実家整理や空き家対策では、最初から全てを片付けようとせず重要な準備から進めることが大切です。
+
+- **重要書類の確保**: 預金通帳、権利証、保険証券を優先的に確認します。
+- **公共料金等の契約整理**: 片付け中に使う電気・水道を残し、不要な契約の手続きを進めます。
+- **防犯対策**: 長期不在となる場合は戸締りや郵便物の転送を手配します。
+
+---
+
+## 2. 専門相談を活用するメリット
+
+自力で数ヶ月かけるよりも、専門の無料査定・見積もり相談を活用することで手間や負担を減らせます。
+
+> 💡 **一人で抱え込まずご相談ください**
+> 無料の見積もりや現地の査定を取り寄せることで、実家の現状価値と今後の選択肢が明確になります。
+`,
+  };
+}
+
+async function generateArticleWithGemini(genAI, prompt, topicData) {
+  try {
+    console.log('Gemini APIに記事全文の生成を依頼中 (responseMimeType: application/json)...');
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text().trim();
+    return JSON.parse(responseText);
+  } catch (err) {
+    console.warn(`[Consultant風フォールバック] Gemini APIエラー (${err.message})。モック記事データを出力します。`);
+    return generateArticleMock(topicData);
+  }
+}
+
 async function main() {
   console.log('=== [Job 2] generate-article 開始 ===');
 
@@ -69,7 +134,6 @@ async function main() {
 
   const db = initFirebaseAdmin();
   const genAI = new GoogleGenerativeAI(apiKey);
-  const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
   const topicsSnapshot = await db.collection('topics')
     .where('status', '==', 'unused')
@@ -129,26 +193,7 @@ ${previousFeedback ? `\n【前回の修正要求 (Feedback Notes)】\n${previous
 }
 `;
 
-  console.log(`Gemini APIに記事全文の生成を依頼中 (モデル: ${modelName})...`);
-  let responseText;
-  try {
-    const model = genAI.getGenerativeModel({ model: modelName });
-    const result = await model.generateContent(prompt);
-    responseText = result.response.text().trim();
-  } catch (err) {
-    console.warn(`モデル ${modelName} エラー、gemini-2.0-flash にフォールバックします...`, err.message);
-    const fallbackModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await fallbackModel.generateContent(prompt);
-    responseText = result.response.text().trim();
-  }
-
-  if (responseText.startsWith('```json')) {
-    responseText = responseText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-  } else if (responseText.startsWith('```')) {
-    responseText = responseText.replace(/^```\s*/, '').replace(/\s*```$/, '');
-  }
-
-  const generatedArticle = JSON.parse(responseText);
+  const generatedArticle = await generateArticleWithGemini(genAI, prompt, topicData);
 
   const articleRef = db.collection('articles').doc();
   const articleDataToSave = {
