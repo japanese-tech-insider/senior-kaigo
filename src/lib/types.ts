@@ -14,9 +14,9 @@ export interface ArticleData {
   status: 'pending_review' | 'published' | 'rejected';
   gmailThreadId?: string;
   gmailMessageId?: string;
-  reviewIteration: number;
+  reviewIteration?: number; // Optionalに変更
   feedbackNotes?: string;
-  category: 'jikka-jimai' | 'akiya' | 'kaitai' | 'ihin-seiri' | 'souzoku';
+  category: string; // マルチサイト対応のためstringへ拡張
   summaryList: string[]; // 冒頭3行の要点結論
   faqList: FAQItem[];
   createdAt: string;

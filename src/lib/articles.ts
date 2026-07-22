@@ -85,7 +85,7 @@ export const INITIAL_ARTICLES: ArticleData[] = [
 
 まずは**病院の相談員（ソーシャルワーカー）**に連絡し、以下の点を確認します。
 - 自宅復帰が本当に難しい理由の整理
-- 次の行き先が決まるまで、同系列の療養病床や**老健(介護老人保健施設＝リハビリ復帰を目指す一時施設)**への中継が可能か
+- 次の行き先が決まるまで、同系列 of 療養病床や**老健(介護老人保健施設＝リハビリ復帰を目指す一時施設)**への中継が可能か
 
 ---
 
@@ -118,6 +118,7 @@ export async function getArticles(): Promise<ArticleData[]> {
       const data = doc.data();
       articles.push({
         id: doc.id,
+        topicId: data.topicId || '',
         slug: data.slug,
         title: data.title,
         category: data.category,
@@ -130,6 +131,7 @@ export async function getArticles(): Promise<ArticleData[]> {
         summaryList: data.summaryList || [],
         faqList: data.faqList || [],
         body: data.body || '',
+        reviewIteration: data.reviewIteration || 1,
       });
     });
 
@@ -158,6 +160,7 @@ export async function getArticleBySlug(slug: string): Promise<ArticleData | unde
       const data = docSnap.data();
       return {
         id: docSnap.id,
+        topicId: data.topicId || '',
         slug: data.slug,
         title: data.title,
         category: data.category,
@@ -170,6 +173,7 @@ export async function getArticleBySlug(slug: string): Promise<ArticleData | unde
         summaryList: data.summaryList || [],
         faqList: data.faqList || [],
         body: data.body || '',
+        reviewIteration: data.reviewIteration || 1,
       };
     }
   } catch (err) {
