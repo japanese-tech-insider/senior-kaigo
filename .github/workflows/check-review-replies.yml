@@ -24,6 +24,7 @@ jobs:
 
       - name: Run Job 3 (check-review-replies)
         env:
+          NEXT_PUBLIC_SITE_ID: 'kaigo'
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}

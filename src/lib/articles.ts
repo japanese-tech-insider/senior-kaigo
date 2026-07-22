@@ -1,267 +1,183 @@
+import { collection, getDocs, query, where, doc, getDoc, orderBy } from 'firebase/firestore';
+import { db } from './firebase';
 import { ArticleData } from './types';
+import { siteConfig } from './site-config';
 
-// モック初期記事（ペルソナ最適化済み結論ファースト構成）
+// 介護施設選びメディア用の初期モック記事（ペルソナ最適化済み）
 export const INITIAL_ARTICLES: ArticleData[] = [
   {
-    id: 'jikka-seiri-first-step',
-    slug: 'jikka-seiri-first-step',
-    title: '親が亡くなった直後の実家整理「何から始める？」後回しにしない順番と全手順',
-    category: 'jikka-jimai',
-    metaTitle: '親が亡くなった直後の実家整理は何から始める？後回しにしない全手順',
-    metaDescription: '親が亡くなった後の実家整理で「まず何をするべきか」をポイント整理して解説。四十九日までの優先度と専門業者への無料相談のタイミングをまとめています。',
+    id: 'tokuyou-group-home-difference',
+    slug: 'tokuyou-group-home-difference',
+    title: '【認知症の親の施設選び】特養とグループホームどっちが良い？費用・手厚さ・入居条件を徹底比較',
+    category: 'criteria',
+    metaTitle: '認知症の親の施設選び｜特養とグループホームの違いと判断基準',
+    metaDescription: '認知症が進行した親御さんの施設探しで迷う家族のために、公的施設である特別養護老人ホーム(特養)と専門ケアのグループホームの違いを費用・入居条件・手厚さで比較解説。',
     status: 'published',
     reviewIteration: 1,
     createdAt: '2026-07-01T09:00:00Z',
     publishedAt: '2026-07-01T10:00:00Z',
     readingTimeMinutes: 4,
     summaryList: [
-      'まずは「貴重品・重要書類の確保」と「電気・水道・ガスの契約確認」を優先するのが安心です。',
-      '家具や大型不用品の処分は四十九日を過ぎてから、家族で方針を話し合って進めるのがスムーズです。',
-      '時間や精神的余裕がない場合は、無理に自力で抱え込まず専門の無料相談を活用することが負担軽減への第一歩です。',
+      '要介護3以上で費用を最優先に抑えたい場合は、特別養護老人ホーム(特養)が第一候補になります。',
+      '認知症の行動が目立ち、少人数でアットホームに見守ってほしい場合はグループホームが適しています。',
+      '自力で悩む前に、ケアマネジャーへの相談や専門スタッフへの無料相談を活用するのが近道です。',
     ],
     faqList: [
       {
-        question: '四十九日の前に片付けを始めても問題ありませんか？',
-        answer: '通帳や遺言書、権利証などの重要書類の確認はすぐに始めて構いません。ただし、思い出の品や大型家具の処分は親族間のトラブルを防ぐため、四十九日後に相談して進めるのが一般的です。',
-      },
-      {
-        question: '遠方に住んでいて片付けに通う時間が取れません。どうすればいいですか？',
-        answer: '遠方の場合は、現地の立ち会い負担を抑えられる遺品整理サービスや無料見積もりを活用するのが便利です。事前確認から分別作業まで相談しながら進められます。',
+        question: 'グループホームに入るにはどのような条件が必要ですか？',
+        answer: '医師による「認知症の診断」を受けていること、原則「要支援2以上」であること、および施設と同一の市区町村に住民票があることが条件です。',
       },
     ],
     body: `
-## 1. 最優先でやるべき「3つの準備」
+## 1. 特養とグループホームの最大の違い
+親御さんの認知症が進むと、在宅介護での見守りが難しくなり、安心できる施設を探す段階に入ります。代表的な2つの施設の特徴は以下の通りです。
 
-親が亡くなった直後は、気持ちの整理がつかず何から手をつけるべきか迷うのが当然です。最初から全ての部屋を片付けようとせず、以下の3つを優先してください。
-
-- **重要書類の確保**: 預金通帳、実印、不動産の権利証、保険証券、遺言書を真っ先に確認します。
-- **公共料金・契約の整理**: 片付け作業用に電気・水道の契約を残し、固定電話やインターネット・新聞購読の手続きを進めます。
-- **戸締りと防犯**: 長期不在となるため、空き巣防犯対策や郵便物の転送手続きを行います。
+- **特別養護老人ホーム(特養)** ＝ *公的で月額費用が安く抑えられ、終身利用できる施設（原則要介護3以上が対象）*
+- **グループホーム** ＝ *5〜9人の少人数で専門スタッフのサポートを受けながら認知症ケアに特化して暮らす住まい*
 
 ---
 
-## 2. 遺品整理・家具処分の進め方比較
+## 2. 費用と手厚さの比較
 
-自分たちで片付けるか、専門業者に相談するかで時間と作業負担が変わります。
-
-| 比較項目 | 自分たちで片付ける | 専門業者に依頼・相談する |
+| 比較項目 | 特別養護老人ホーム(特養) | 認知症対応型グループホーム |
 | :--- | :--- | :--- |
-| **作業期間** | 数ヶ月〜1年以上 | 最短数日〜（作業規模による） |
-| **体力的負担** | 非常に重い | 立ち会い・確認のみ |
-| **費用目安** | 粗大ゴミ処理代等 | 間取りや荷物量に応じたお見積もり |
-| **おすすめの状況** | 親族が集まれる・時間が確保できる | 遠方住まい・精神的負担を抑えたい |
+| **月額費用目安** | 約8万〜15万円程度 | 約12万〜20万円程度 |
+| **入居一時金** | 不要（0円） | 不要〜数十万円程度 |
+| **対象の介護度** | 原則要介護3以上 | 要支援2 〜 要介護5 |
+| **特徴** | 看護師の常駐など医療的ケアが手厚い | 少人数で家庭的な環境。環境変化が少ない |
 
 ---
 
-## 3. 失敗しないためのワンポイント
+## 3. 我が家に適した選び方の結論
+要介護3以上で、かつ胃ろう等の医療的ケアが必要な場合は「特養」を最優先で検討してください。
+一方で、お身体はある程度元気だが物忘れや徘徊があり、家庭的な雰囲気で穏やかに過ごさせたい場合は「グループホーム」が強く推奨されます。
 
-> 💡 **一人で抱え込まないでください**
-> 「親の実家を片付けなければ」という責任感から、一人で週末ごとに通い体調を崩してしまうケースが見られます。まずは無料の査定・見積もり相談を活用し、全体像と概算費用を把握することをおすすめします。
+> 💡 **焦って一人で決めないでください**
+> 施設探しは膨大な選択肢があり、何社も直接問い合わせるのには大変な労力がかかります。無料相談窓口を賢く利用し、条件に合う施設をリストアップしてもらいましょう。
 `,
   },
   {
-    id: 'akiya-houchi-tax-risk',
-    slug: 'akiya-houchi-tax-risk',
-    title: '誰も住まない実家を放置するとどうなる？「特定空き家」のリスクと対応策',
-    category: 'akiya',
-    metaTitle: '実家を空き家のまま放置するリスクと特定空き家対策の手引き',
-    metaDescription: '親が亡くなった後の実家を空き家で放置する税金リスクや維持管理の注意点を解説。売却・管理・解体の選択肢を分かりやすく案内します。',
+    id: 'hospital-exit-facility-choice',
+    slug: 'hospital-exit-facility-choice',
+    title: '「退院が迫っている」と言われたら？病院から老人ホームを探す全手順と期限別の対処法',
+    category: 'timing',
+    metaTitle: '退院を迫られた時の老人ホームの探し方｜期限別の手順と一時入所',
+    metaDescription: '入院中の親御さんの退院期限（リハビリ期限等）が迫り、次の老人ホームや施設を急ぎ探さなければならないご家族向けに、老健を活用した猶予期間の作り方や施設選定手順を解説。',
     status: 'published',
     reviewIteration: 1,
     createdAt: '2026-07-05T09:00:00Z',
     publishedAt: '2026-07-05T10:00:00Z',
     readingTimeMinutes: 3,
     summaryList: [
-      '空き家を放置して「特定空き家」に指定された場合、固定資産税の住宅用地特例（減額措置）から除外されるおそれがあります。',
-      '維持管理が難しい場合、「現状での売却・買取」や「解体して更地化」など複数の選択肢を比較検討することが大切です。',
-      'まずは無料の不動産査定や専門窓口へのご相談で、実家の現状価値と維持コストを確認してみましょう。',
+      '病院のソーシャルワーカーに相談し、リハビリ目的の「老健(一時的な公的施設)」への転院で時間的猶予を確保しましょう。',
+      '退院期限までの短い時間で自力で探すのは困難なため、一括資料請求や無料施設紹介サービスを直ちに活用します。',
+      '焦って契約せず、お身体の状況に合わせた民間有料ホームやサ高住の見学・体験入居を必ず行いましょう。',
     ],
     faqList: [
       {
-        question: '空き家を売却する場合、税金上の優遇措置はありますか？',
-        answer: '一定の要件を満たす場合「空き家の3,000万円特別控除」等の税制特例が利用できる場合があります。適用条件の詳細や期限については税務署や税理士等の専門家にご確認ください。',
+        question: '病院から直接有料老人ホームへ入居することはできますか？',
+        answer: 'はい、可能です。お身体の状況に応じて、医療的ケア（酸素吸入や胃ろう等）が必要な場合でも受け入れ可能な有料老人ホームを専門員を通じて迅速にマッチングできます。',
       },
     ],
     body: `
-## 1. 空き家放置で注意すべきリスク
+## 1. 退院期限を突きつけられた時の最初のステップ
+病院から「来月までに退院してください」と言われると、大きな焦りを感じてしまいます。しかし、焦って不条理な施設を契約してはいけません。
 
-実家を放置すると、建物の老朽化だけでなく維持費用や近隣への懸念が発生します。
-
-- **税金・維持費負担**: 特定空き家に指定されると固定資産税の優遇が外れるおそれがあります。
-- **近隣への配慮**: 雑草や害虫、台風時の瓦・飛来物トラブルへの備えが必要です。
-- **建物価値の低下**: 通風を行わない家屋はカビや痛みが早まる傾向にあります。
-
----
-
-## 2. 方針検討のチェックリスト
-
-以下の項目に当てはまる場合は、管理維持だけでなく「売却・買取査定」を検討してみるタイミングです。
-
-1. ✅ 自宅から実家まで遠く頻繁に通えない
-2. ✅ 将来家族が住む予定が決まっていない
-3. ✅ 毎年の固定資産税や維持費の管理が負担になっている
+まずは**病院の相談員（ソーシャルワーカー）**に連絡し、以下の点を確認します。
+- 自宅復帰が本当に難しい理由の整理
+- 次の行き先が決まるまで、同系列の療養病床や**老健(介護老人保健施設＝リハビリ復帰を目指す一時施設)**への中継が可能か
 
 ---
 
-## 3. 次にとるべき安心のアクション
+## 2. 期限までに最適な施設を見つける方法
+ソーシャルワーカーに相談して少しの猶予を作ったら、並行して民間施設の検討を進めます。
 
-> 💡 **査定・相談は無料で受けられます**
-> 「まだ手放すか決めていない」段階でも、現在の市場価値や概算査定を取り寄せることができます。客観的な数値を把握することが今後のご家族での話し合いにも役立ちます。
-`,
-  },
-  {
-    id: 'kaitai-hiyou-souba-guide',
-    slug: 'kaitai-hiyou-souba-guide',
-    title: '【2026年最新】実家の解体費用相場はいくら？構造別の坪単価目安と抑えるポイント',
-    category: 'kaitai',
-    metaTitle: '実家解体費用の相場ガイド｜構造別坪単価と費用抑えるポイント',
-    metaDescription: '実家の解体工事にかかる概算費用と構造別坪単価を分かりやすく解説。自治体の助成金確認や相見積もりの活用方法を紹介。',
-    status: 'published',
-    reviewIteration: 1,
-    createdAt: '2026-07-10T09:00:00Z',
-    publishedAt: '2026-07-10T10:00:00Z',
-    readingTimeMinutes: 4,
-    summaryList: [
-      '木造住宅の解体坪単価は「1坪あたり3万〜5万円」程度が一般的な目安です。',
-      '屋内の家具や不用品はあらかじめ処分や買取査定に出すことで解体費用全体の削減につながります。',
-      '自治体によっては「老朽危険家屋の解体補助金」制度を設けている場合があります。',
-    ],
-    faqList: [
-      {
-        question: '解体費用は売却代金から精算できますか？',
-        answer: '事業者や買取プランによっては、解体前提の買い取りや売却代金からの精算に対応してくれるケースもあります。相談時に条件をご確認ください。',
-      },
-    ],
-    body: `
-## 1. 構造別の解体費用相場（目安）
-
-実家の構造や周辺道路状況によって解体費用は変わります。
-
-| 構造 | 坪単価目安 | 30坪の場合の概算目安 |
-| :--- | :--- | :--- |
-| **木造** | 3.5万〜5.0万円程度 | 約105万〜150万円 |
-| **軽量鉄骨** | 4.5万〜6.0万円程度 | 約135万〜180万円 |
-| **RC (鉄筋コンクリート)**| 6.0万〜8.0万円程度 | 約180万〜240万円 |
-
----
-
-## 2. 費用を抑えるためのポイント
-
-1. **家財道具の事前整理**: 屋内の不用品・家電の処理代は解体作業費とは別途計算されることがあります。
-2. **複数の事業者から相見積もりをとる**: 1社の提示額で決めず、条件や対応を比較します。
-3. **自治体の助成制度を確認**: 自治体によっては解体補助金を用意している場合があります（要事前確認）。
-
----
-
-## 3. 無料相見積もりの活用
-
-> 💡 **自分で比較する手間を削減**
-> 地元の解体事業者を一から自分で探すのは大変です。一括見積もりサービスを活用することで、実績のある事業者から無料で見積もりを取得し比較できます。
-`,
-  },
-  {
-    id: 'ihin-seiri-cost-saving',
-    slug: 'ihin-seiri-cost-saving',
-    title: '遺品整理業者に頼むといくらかかる？間取り別費用相場と依頼時の留意点',
-    category: 'ihin-seiri',
-    metaTitle: '遺品整理の費用相場ガイド｜間取り別料金と業者の選び方',
-    metaDescription: '遺品整理の料金相場を間取り別に掲載。事前見積もりの確認ポイントや高価買取の併用について解説。',
-    status: 'published',
-    reviewIteration: 1,
-    createdAt: '2026-07-12T09:00:00Z',
-    publishedAt: '2026-07-12T10:00:00Z',
-    readingTimeMinutes: 3,
-    summaryList: [
-      '遺品整理の概算相場は「1DKで4万〜8万円」「3LDKで15万〜30万円」程度が一般的目安です。',
-      '訪問見積もりで明確な費用内訳を提示してくれる事業者を選ぶことが安心につながります。',
-      '状態の良い着物や貴金属・骨董品などは出張買取を併用することで実質費用を抑えられる場合があります。',
-    ],
-    faqList: [
-      {
-        question: '見積もり後に予期せぬ追加費用が発生することはありますか？',
-        answer: '事前の訪問査定や確定見積書を提示してくれる事業者であれば、作業内容の追加がない限り急な増額は避けられます。事前に契約条件をご確認ください。',
-      },
-    ],
-    body: `
-## 1. 間取り別の遺品整理 料金目安
-
-遺品整理の料金は、部屋の広さや荷物の量・階段等の搬出条件によって変わります。
-
-- **1K / 1DK**: 35,000円 〜 80,000円程度
-- **2LDK / 3DK**: 120,000円 〜 220,000円程度
-- **3LDK / 4LDK以上**: 180,000円 〜 350,000円程度
-
----
-
-## 2. 相談時の確認ポイント
-
-- **現地訪問で無料見積もりに対応してくれるか**
-- **作業内訳や廃棄物処理の取り決めが明瞭か**
-- **買取対応サービスを併用できるか**
-
----
-
-## 3. まずは無料査定・相談から
-
-> 💡 **相談・お見積もりは無料です**
-> 見積もりを取り寄せたからといって必ず契約する必要はありません。複数社から提示を受け、一番誠実に対応してくれる事業者を選びましょう。
-`,
-  },
-  {
-    id: 'souzoku-touki-jikka-seiri',
-    slug: 'souzoku-touki-jikka-seiri',
-    title: '親の名義のままの実家は売却できる？相続登記義務化のポイントと進め方',
-    category: 'souzoku',
-    metaTitle: '親の名義のままの実家売却・解体手順と相続登記義務化のポイント',
-    metaDescription: '亡くなった親の名義のままでは実家の売却や契約手続きができません。相続登記義務化のポイントと名義変更・整理の進め方を解説。',
-    status: 'published',
-    reviewIteration: 1,
-    createdAt: '2026-07-15T09:00:00Z',
-    publishedAt: '2026-07-15T10:00:00Z',
-    readingTimeMinutes: 4,
-    summaryList: [
-      '亡くなった親名義の不動産はそのままでは売却や解体契約ができません。まず相続人の確定と名義変更（相続登記）が必要です。',
-      '2024年4月より相続登記が義務化されています。期限や手続方法は法務局や司法書士へご確認ください。',
-      '名義変更の手配と並行して「現状の買取価値や解体費用の査定」を進めておくと協議がスムーズです。',
-    ],
-    faqList: [
-      {
-        question: '相続人が複数いる場合、一人の判断で売却できますか？',
-        answer: '原則として不可能です。遺産分割協議を行い、誰が取得するか、売却代金をどう分けるかを相続人全員で合意する必要があります。',
-      },
-    ],
-    body: `
-## 1. 名義変更を行わない場合の問題点
-
-- **売買や契約手続きが進められない**
-- **年月の経過により二次相続が発生し、権利者が複雑化する**
-- **登記義務化に伴う手続き期限が設定されている**
-
----
-
-## 2. スムーズな手続きのステップ
-
-1. **相続人の確定**: 親の出生から死亡までの戸籍等を取得。
-2. **遺産分割協議**: 実家の取扱い（誰が取得するか・売却するか等）を合意。
-3. **相続登記**: 司法書士または法務局で手続き。
-4. **整理・売却の相談**: 名義確認後、専門事業者へ買取・査定を依頼。
-
----
-
-## 3. まずは現状の無料査定から
-
-> 💡 **遺産分割の話し合いにも役立ちます**
-> 客観的な売却金額や現状価値の目安を出しておくことで、ご親族間での遺産分割の話し合いが円滑に進みやすくなります。
+1. **お身体の医療ニーズを整理**: 24時間看護師常駐が必要か、夜間のたん吸引が必要か等。
+2. **無料のプロの紹介センターを活用**: 自力でネット検索して電話をする時間は足りません。条件を伝えるだけで当日〜翌日に候補を提示してくれる無料サービスが必須です。
+3. **体験入所を依頼**: 急な転居で本人がパニックにならないよう、ショートステイ等を挟んで慣らすのも有効です。
 `,
   },
 ];
 
+// Firestore コレクション名の動的判定
+const getArticlesCollectionName = () => {
+  const siteId = process.env.NEXT_PUBLIC_SITE_ID || 'kaigo';
+  return siteId === 'kaigo' ? 'kaigo_articles' : 'articles';
+};
+
 export async function getArticles(): Promise<ArticleData[]> {
-  return INITIAL_ARTICLES.filter((a) => a.status === 'published');
+  try {
+    const colName = getArticlesCollectionName();
+    console.log(`[getArticles] Fetching from Firestore collection: ${colName}`);
+    const articlesCol = collection(db, colName);
+    const q = query(articlesCol, where('status', '==', 'published'));
+    const querySnapshot = await getDocs(q);
+    
+    const articles: ArticleData[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      articles.push({
+        id: doc.id,
+        slug: data.slug,
+        title: data.title,
+        category: data.category,
+        metaTitle: data.metaTitle || data.title,
+        metaDescription: data.metaDescription || '',
+        status: data.status,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || '',
+        publishedAt: data.publishedAt?.toDate?.()?.toISOString() || data.publishedAt || '',
+        readingTimeMinutes: data.readingTimeMinutes || 4,
+        summaryList: data.summaryList || [],
+        faqList: data.faqList || [],
+        body: data.body || '',
+      });
+    });
+
+    if (articles.length === 0) {
+      console.log('[getArticles] Firestore is empty, falling back to INITIAL_ARTICLES');
+      return INITIAL_ARTICLES;
+    }
+
+    // 最新公開順にソート
+    return articles.sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+  } catch (err) {
+    console.error('[getArticles] Firestore fetch failed, falling back to INITIAL_ARTICLES:', err);
+    return INITIAL_ARTICLES;
+  }
 }
 
 export async function getArticleBySlug(slug: string): Promise<ArticleData | undefined> {
-  const articles = await getArticles();
+  try {
+    const colName = getArticlesCollectionName();
+    const articlesCol = collection(db, colName);
+    const q = query(articlesCol, where('slug', '==', slug), where('status', '==', 'published'));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const docSnap = querySnapshot.docs[0];
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        slug: data.slug,
+        title: data.title,
+        category: data.category,
+        metaTitle: data.metaTitle || data.title,
+        metaDescription: data.metaDescription || '',
+        status: data.status,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || '',
+        publishedAt: data.publishedAt?.toDate?.()?.toISOString() || data.publishedAt || '',
+        readingTimeMinutes: data.readingTimeMinutes || 4,
+        summaryList: data.summaryList || [],
+        faqList: data.faqList || [],
+        body: data.body || '',
+      };
+    }
+  } catch (err) {
+    console.error(`[getArticleBySlug] Fetching slug ${slug} from Firestore failed:`, err);
+  }
+
+  // フォールバック
+  const articles = INITIAL_ARTICLES;
   return articles.find((a) => a.slug === slug);
 }
 

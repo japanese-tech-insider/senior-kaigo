@@ -24,6 +24,7 @@ jobs:
 
       - name: Run Job 1 (generate-topics)
         env:
+          NEXT_PUBLIC_SITE_ID: 'kaigo'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
         run: node scripts/generate-topics.js

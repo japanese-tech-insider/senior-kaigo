@@ -8,6 +8,11 @@ const { initializeApp, getApps, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { google } = require('googleapis');
 
+const siteId = process.env.NEXT_PUBLIC_SITE_ID || 'kaigo';
+const topicsCollection = siteId === 'kaigo' ? 'kaigo_topics' : 'topics';
+const articlesCollection = siteId === 'kaigo' ? 'kaigo_articles' : 'articles';
+const processedEmailsCollection = siteId === 'kaigo' ? 'kaigo_processed_emails' : 'processed_emails';
+
 function initFirebaseAdmin() {
   if (getApps().length === 0) {
     const serviceAccountVar = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -35,7 +40,7 @@ function getGmailClient() {
   return google.gmail({ version: 'v1', auth: oauth2Client });
 }
 
-function createRawHtmlEmail({ to, from, subject, htmlBody, threadId }) {
+function createRawHtmlEmail({ to, from, subject, htmlBody }) {
   const emailLines = [
     `To: ${to}`,
     `From: ${from}`,
@@ -114,12 +119,12 @@ async function sendPublishNotification({ gmail, article }) {
 }
 
 async function main() {
-  console.log('=== [Job 3] check-review-replies 開始 ===');
+  console.log(`=== [Job 3] check-review-replies 開始 (SiteID: ${siteId}, Articles: ${articlesCollection}) ===`);
 
   const db = initFirebaseAdmin();
   const gmail = getGmailClient();
 
-  const pendingArticlesSnapshot = await db.collection('articles')
+  const pendingArticlesSnapshot = await db.collection(articlesCollection)
     .where('status', '==', 'pending_review')
     .get();
 
@@ -157,7 +162,7 @@ async function main() {
       const msg = messages[i];
       const msgId = msg.id;
 
-      const processedDoc = await db.collection('processed_emails').doc(msgId).get();
+      const processedDoc = await db.collection(processedEmailsCollection).doc(msgId).get();
       if (processedDoc.exists) {
         continue;
       }
@@ -178,12 +183,12 @@ async function main() {
       if (upperBody.includes('OK')) {
         console.log(`>>> 【承認判定: OK】記事 [${article.id}] を公開(published)にします。`);
 
-        await db.collection('articles').doc(article.id).update({
+        await db.collection(articlesCollection).doc(article.id).update({
           status: 'published',
           publishedAt: FieldValue.serverTimestamp(),
         });
 
-        await db.collection('processed_emails').doc(msgId).set({
+        await db.collection(processedEmailsCollection).doc(msgId).set({
           messageId: msgId,
           articleId: article.id,
           actionTaken: 'approved',
@@ -197,23 +202,37 @@ async function main() {
           console.error('公開完了メール送信失敗:', mailErr.message);
         }
 
+        // ISRのオンデマンド再検証（オプション）
+        try {
+          const revalidateToken = process.env.REVALIDATE_SECRET_TOKEN;
+          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://senior-kaigo.web.app';
+          if (revalidateToken) {
+            console.log('オンデマンド ISR 再検証を実行します...');
+            const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+            const revRes = await fetch(`${siteUrl}/api/revalidate?secret=${revalidateToken}&slug=${article.slug}`);
+            console.log('ISR 再検証結果ステータス:', revRes.status);
+          }
+        } catch (isrErr) {
+          console.error('ISR 再検証リクエスト失敗:', isrErr.message);
+        }
+
       } else if (upperBody.includes('NG')) {
         console.log(`>>> 【却下・再生成判定: NG】記事 [${article.id}] のトピックを未使用に戻します。`);
 
-        await db.collection('articles').doc(article.id).update({
+        await db.collection(articlesCollection).doc(article.id).update({
           status: 'rejected',
           feedbackNotes: bodyText,
         });
 
         if (article.topicId) {
-          await db.collection('topics').doc(article.topicId).update({
+          await db.collection(topicsCollection).doc(article.topicId).update({
             status: 'unused',
             lastFeedbackNotes: bodyText,
             reviewIteration: (article.reviewIteration || 1) + 1,
           });
         }
 
-        await db.collection('processed_emails').doc(msgId).set({
+        await db.collection(processedEmailsCollection).doc(msgId).set({
           messageId: msgId,
           articleId: article.id,
           actionTaken: 'rejected',
@@ -222,7 +241,7 @@ async function main() {
 
       } else {
         console.log(`>>> 【判定不能】返信本文に OK / NG が見つかりませんでした。ログのみ記録します。`);
-        await db.collection('processed_emails').doc(msgId).set({
+        await db.collection(processedEmailsCollection).doc(msgId).set({
           messageId: msgId,
           articleId: article.id,
           actionTaken: 'ignored',

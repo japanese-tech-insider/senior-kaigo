@@ -1,11 +1,15 @@
 /**
  * Job 1: generate-topics
  * 毎日朝6時(JST)に実行
+ * 「親の介護施設選び」特化メディア用トピック生成
  */
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { initializeApp, getApps, cert } = require('firebase-admin/app');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getFirestore } = require('firebase-admin/firestore');
+
+const siteId = process.env.NEXT_PUBLIC_SITE_ID || 'kaigo';
+const topicsCollection = siteId === 'kaigo' ? 'kaigo_topics' : 'topics';
 
 function initFirebaseAdmin() {
   if (getApps().length === 0) {
@@ -25,11 +29,11 @@ function initFirebaseAdmin() {
 }
 
 const MOCK_TOPICS = [
-  { keyword: '実家整理 費用 相場', angle: '45歳以上で兄弟間トラブルなく実家整理費用を分担・抑える手順', category: 'jikka-jimai' },
-  { keyword: '空き家 放置 固定資産税 6倍', angle: '特定空き家指定による減額解除リスクと事前の現状査定対策', category: 'akiya' },
-  { keyword: '実家 解体費用 30坪 木造', angle: '構造別解体坪単価と自治体の老朽危険家屋補助金活用術', category: 'kaitai' },
-  { keyword: '遺品整理 業者 相場 間取り', angle: '部屋別費用相場と高価買取査定を併用した費用相殺テクニック', category: 'ihin-seiri' },
-  { keyword: '相続登記 義務化 実家売却', angle: '親の名義のままの実家をスムーズに名義変更し売却する流れ', category: 'souzoku' },
+  { keyword: '親 施設選び 認知症 判断基準', angle: '認知症進行時の要介護度と特養・グループホームの選択基準', category: 'criteria' },
+  { keyword: '特養 有料老人ホーム 違い 費用', angle: '特別養護老人ホームと民間有料ホームの費用・手厚さ・入居待ち比較', category: 'types' },
+  { keyword: '親 老人ホーム 費用 年金内', angle: '親の年金内で納める月額費用の抑え方と公的助成制度の活用', category: 'cost' },
+  { keyword: '病院 退院迫る 老人ホーム 探し方', angle: '退院期限が迫った時の老健一時入所と急ぎの施設選び手順', category: 'timing' },
+  { keyword: '親 施設入居 兄弟 対立 説得', angle: '介護施設選びで兄弟と意見が合わない時の話し合いと説得テクニック', category: 'family-agreement' },
 ];
 
 async function generateTopicsWithGemini(genAI, prompt) {
@@ -54,12 +58,12 @@ async function generateTopicsWithGemini(genAI, prompt) {
     }
   }
 
-  console.warn('[Consultant風フォールバック] 全モデルエラーのためモックトピックを出力します。');
+  console.warn('[フォールバック] 全モデルエラーのためモックトピックを出力します。');
   return MOCK_TOPICS;
 }
 
 async function main() {
-  console.log('=== [Job 1] generate-topics 開始 ===');
+  console.log(`=== [Job 1] generate-topics 開始 (SiteID: ${siteId}, Collection: ${topicsCollection}) ===`);
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -72,7 +76,7 @@ async function main() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const existingTopicsSnapshot = await db.collection('topics')
+  const existingTopicsSnapshot = await db.collection(topicsCollection)
     .where('createdAt', '>=', thirtyDaysAgo)
     .get();
 
@@ -85,53 +89,76 @@ async function main() {
   console.log(`直近30日間の登録済みキーワード (${usedKeywords.length}件):`, usedKeywords);
 
   const prompt = `
-あなたは「親が亡くなった後の実家整理」に特化したSEO専門メディアのコンテンツプロデューサーです。
+あなたは「親の介護施設選び」に特化したSEO専門メディアのコンテンツプロデューサーです。
 
 【ペルソナ情報】
-- ターゲット年齢: 45〜65歳 (スマホ閲覧メイン)
-- 心理状態: 親の突然の不幸や介護で疲弊しており、時間的精神的ゆとりがない。
-- ニーズ: 「自分の状況で今すぐ何をすべきか」の短く安心できる結論と具体的アドバイスを求めている。
+- ターゲット年齢: 45〜65歳 (介護をしている本人、または遠方に住む子世代。スマホ閲覧メイン)
+- ITリテラシー: 中〜低。専門用語（特養、要介護度、ユニット型など）に馴染みがない。
+- 心理状態: 親の認知症や体調悪化に直面し、焦りと罪悪感を抱えている。冷静に比較検討する余裕がなく、「今すぐ何をすればいいか」だけを知りたい。
+- 求めているもの: 一覧比較ではなく、「自分の親の状況なら何を選べばいいか」の明確な判断基準。家族間（特に兄弟間）の意見の対立に悩んでいる。
 
-【禁止事項・避けるべき切り口】
-- 医療や法的決定に関する過度で断定的な助言 (弁護士や司法書士への相談を促す形にする)
+【禁止事項・避けるべき切り口 (厳守)】
+- 医療的な断定的助言 (例: 「〇〇の症状なら絶対〇〇病」など。必ず主治医やケアマネへの相談を前提とする)
+- 施設の実名での評判・個別評価・批判 (特定の個別施設名を挙げての比較評価は絶対に行わない)
 - 読者の不安を煽り立てる扇動的な表現や過激な見出し
 
-【既に過去30日間で使用されたキーワード一覧 (重複厳禁)】
+【カテゴリ一覧 (下記5個のslugのいずれかを必ず選択)】
+1. criteria (施設選びの判断基準)
+2. types (施設の種類と違い)
+3. cost (費用・お金)
+4. timing (入居のタイミング)
+5. family-agreement (家族間の合意形成)
+
+【過去30日間で使用されたキーワード一覧 (重複厳禁)】
 ${usedKeywords.length > 0 ? usedKeywords.join(', ') : 'なし'}
 
-【指示】
-上記ペルソナの悩みに合致し、検索ボリュームが見込める実家整理・空き家売却・解体費用・遺品整理・相続関係の「新しいトピック（キーワードと記事の切り口）」を5件、以下のJSON配列フォーマット厳守で生成してください。
-
-[JSON出力フォーマット]
+【出力形式】
+JSON配列で5件のトピック候補を出力してください。各要素は以下のオブジェクト構造にしてください:
 [
   {
-    "keyword": "実家整理 費用 相場",
-    "angle": "45歳以上で兄弟間トラブルなく実家整理費用を分担・安く抑えるコツ",
-    "category": "jikka-jimai"
+    "keyword": "検索キーワード (例: 認知症 親 老人ホーム 選び方)",
+    "angle": "読者が抱く焦りや罪悪感を解消する切り口・提案内容",
+    "category": "上記5つのslugのいずれか"
   }
 ]
 `;
 
-  const generatedTopics = await generateTopicsWithGemini(genAI, prompt);
-  console.log(`生成されたトピック数: ${generatedTopics.length}件`);
+  let newTopics = await generateTopicsWithGemini(genAI, prompt);
 
-  const batch = db.batch();
-  for (const topic of generatedTopics) {
-    const docRef = db.collection('topics').doc();
-    batch.set(docRef, {
-      keyword: topic.keyword,
-      angle: topic.angle,
-      category: topic.category || 'jikka-jimai',
-      status: 'unused',
-      createdAt: FieldValue.serverTimestamp(),
-    });
+  if (!Array.isArray(newTopics) || newTopics.length === 0) {
+    console.warn('トピックが正常に取得できなかったためモックを使用します。');
+    newTopics = MOCK_TOPICS;
   }
 
-  await batch.commit();
-  console.log('=== [Job 1] generate-topics 完了 (Firestoreに保存完了) ===');
+  console.log(`生成されたトピック数: ${newTopics.length}件`);
+
+  let addedCount = 0;
+  for (const item of newTopics) {
+    if (!item.keyword || !item.category) continue;
+
+    const querySnapshot = await db.collection(topicsCollection)
+      .where('keyword', '==', item.keyword)
+      .get();
+
+    if (querySnapshot.empty) {
+      await db.collection(topicsCollection).add({
+        keyword: item.keyword,
+        angle: item.angle || '',
+        category: item.category,
+        status: 'unused',
+        createdAt: new Date(),
+      });
+      console.log(`[追加] トピック: ${item.keyword} (カテゴリ: ${item.category})`);
+      addedCount++;
+    } else {
+      console.log(`[重複スキップ] トピック: ${item.keyword}`);
+    }
+  }
+
+  console.log(`=== [Job 1] 完了: 新規 ${addedCount}件のトピックをFirestoreの ${topicsCollection} に保存しました ===`);
 }
 
 main().catch((err) => {
-  console.error('Job 1 エラー発生:', err);
+  console.error('Job 1 エラー:', err);
   process.exit(1);
 });
